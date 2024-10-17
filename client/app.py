@@ -266,6 +266,7 @@ def init():
 
     print('enable station interface and connect to WiFi access point ...')
     network.hostname('wifi-uart-tool')
+    print('hostname:', network.hostname())
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     print(f'connecting to network "{CFG_WLAN_SSID}"...', end='')
