@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>SerialPort Log Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: white;
+            background: #212121;
+        }
+        p {
+            margin-block-start: 0.5em;
+            margin-block-end: 0.5em;
+        }
+        button {
+            min-width: 80px;
+            margin-right: 12px;
+        }
+        #log {
+            font-family: 'Courier New', Courier, monospace;
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        .toolbox {
+            display: flex; /* 使用 Flexbox 布局 */
+            align-items: center; /* 垂直居中对齐 */
+            margin-bottom: 12px;
+        }
+        .checkbox-container {
+            display: flex; /* 使用 Flexbox 布局 */
+            align-items: center; /* 垂直居中对齐 */
+        }
+        .checkbox-container label {
+            margin-right: 12px; /* 为复选框右侧添加间距 */
+        }
+    </style>
+</head>
+<body>
+    <h3>${INFO}</h3>
+    <div class="toolbox">
+        <button id="startButton">Start</button>
+        <button id="clearButton">Clear Log</button>
+        <div class="checkbox-container">
+            <input type="checkbox" id="checkbox-timestamp" checked/>
+            <label for="checkbox-timestamp">Enable Timestamp</label>
+        </div>
+        <div class="checkbox-container">
+            <input type="checkbox" id="checkbox-autoScroll" checked/>
+            <label for="checkbox-autoScroll">Auto Scroll</label>
+        </div>
+    </div>
+    <div id="log"></div>
+
+    <script>
+        var log_en  = true
+        var evt_src = null
+        var color_map = {
+            30: 'black',
+            31: 'red',
+            32: 'green',
+            33: 'yellow',
+            34: 'blue',
+            35: 'magenta',
+            36: 'cyan',
+            37: 'white'
+        };
+        window.addEventListener('beforeunload', function(event) {
+            if (evt_src)
+                evt_src.close();
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+
+            var logDiv = document.getElementById('log');
+            var startButton = document.getElementById('startButton');
+            var clearButton = document.getElementById('clearButton');
+            var timestampBox = document.getElementById('checkbox-timestamp');
+            var autoScrollBox = document.getElementById('checkbox-autoScroll');
+
+            clearButton.addEventListener('click', function() {
+                logDiv.innerHTML = '';
+            });
+
+            startButton.addEventListener('click', function() {
+
+                if (startButton.textContent == "Start") {
+
+                    if (!evt_src) {
+                        evt_src = new EventSource('/log');
+                        evt_src.onmessage = function(event) {
+                            let data = event.data;
+                            let data_prefix = '';
+                            if (timestampBox.checked) {
+                                data_prefix = `[${(new Date()).toLocaleTimeString('zh-cn')}] `;
+                            }
+                            if (log_en) {
+                                var logLine = document.createElement('p');
+                                // ANSA 颜色
+                                let m = /\x1b\[(\d+)m(.*)\x1b\[0m/.exec(data);
+                                if (m) {
+                                    let head = data.substr(0, m.index);
+                                    let tail = data.substr(m.index + m[0].length);
+
+                                    let colr = color_map[parseInt(m[1])] || 'white';
+                                    let midNode = document.createElement('span');
+                                    midNode.style.color = colr;
+                                    midNode.textContent = m[2];
+
+                                    logLine.appendChild(document.createTextNode(data_prefix + head));
+                                    logLine.appendChild(midNode);
+                                    logLine.appendChild(document.createTextNode(tail));
+                                } else {
+                                    let m2 = /\[(W|E)\] .+/.exec(data);
+                                    if (m2) {
+                                        let head = data.substr(0, m2.index);
+                                        let colr = m2[1] == 'W' ? 'yellow' : 'red';
+                                        let midNode = document.createElement('span');
+                                        midNode.style.color = colr;
+                                        midNode.textContent = m2[0];
+
+                                        logLine.appendChild(document.createTextNode(data_prefix + head));
+                                        logLine.appendChild(midNode);
+                                    } else {
+                                        logLine.textContent = data_prefix + data;
+                                    }
+                                }
+                                logDiv.appendChild(logLine);
+                                // 自动滚动到底部
+                                if (autoScrollBox.checked) {
+                                    logDiv.scrollTop = logDiv.scrollHeight;
+                                }
+                            }
+                        };
+                        evt_src.onerror = function(event) {
+                            console.error('SSE Error:', event);
+                        };
+                    }
+
+                    // 切换按钮
+                    log_en = true
+                    startButton.textContent = "Pause";
+                }
+                else {
+                    // 切换按钮
+                    log_en = false;
+                    startButton.textContent = "Start";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
