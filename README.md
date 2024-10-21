@@ -69,6 +69,7 @@ esp32板子的指示灯会亮起，待指示灯熄灭后，代表网络已连接
 
 |键|类型|描述|
 |:---|:---|:---|
+|CFG_DEVICE_TAG|string|设备标签，当有多个设备时，可通过修改标签区分不同设备|
 |CFG_WLAN_SSID|string|WIFI名称|
 |CFG_WLAN_PASS|string|WIFI密码|
 |CFG_UART_BAUD|int|串口波特率|

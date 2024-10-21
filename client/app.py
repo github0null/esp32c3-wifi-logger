@@ -195,6 +195,8 @@ class HttpRsp:
             rsp += s[:16].rstrip() + ' ...'
         return rsp
 
+CFG_DEVICE_TAG  = 'dev0'
+
 CFG_WLAN_SSID   = '<SSID>'
 CFG_WLAN_PASS   = '<PASS>'
 CFG_UART_BAUD   = 115200
@@ -412,7 +414,7 @@ async def rmt_recorder_process():
             reader, writer = await asyncio.open_connection(_host, _port)
             print('remote recorder established.')
             try:
-                writer.write(f'data: ---------- remote recorder startuped ----------\n\n'.encode())
+                writer.write(f'data: ---------- remote recorder startuped, tag: {CFG_DEVICE_TAG} ----------\n\n'.encode())
                 await writer.drain()
             except:
                 print(f'invalid remote recorder {_host}:{_port}, retry after 5min')
@@ -433,7 +435,7 @@ async def rmt_recorder_process():
 
 async def uart_handler():
     global event_stream_conns
-    log_line = bytearray('data: '.encode())
+    log_line = bytearray(f'data: [{CFG_DEVICE_TAG}] '.encode())
     while True:
         if uart1.any() == 0:
             await asyncio.sleep_ms(10)
@@ -449,7 +451,7 @@ async def uart_handler():
                 log_line.append(0x0A)
                 log_line.append(0x0A)
                 tx_buffer = predecode(log_line)
-                log_line = bytearray('data: '.encode())
+                log_line = bytearray(f'data: [{CFG_DEVICE_TAG}] '.encode())
                 # send log to web-terminal
                 delList = []
                 for k in event_stream_conns:
