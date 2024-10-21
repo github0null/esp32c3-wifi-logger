@@ -1,6 +1,7 @@
 const net = require('net');
 const os  = require('os');
 const fs  = require('fs');
+const nodePath = require('path');
 
 // global -----------------------------------------
 
@@ -26,6 +27,20 @@ function timeStamp() {
         + ` ${time.region}`;
 }
 
+function timeStampForPath() {
+    const date = new Date();
+    const time = {
+        year:   date.getFullYear(),
+        month:  date.getMonth() + 1,
+        date:   date.getDate(),
+        hour:   date.getHours(),
+        minute: date.getMinutes(),
+        second: date.getSeconds(),
+        region: date.toTimeString().split(' ')[1]
+    };
+    return `${time.year}-${time.month.toString().padStart(2, '0')}-${time.date.toString().padStart(2, '0')}`;
+}
+
 // server ----------------------------------------
 
 const server = net.createServer((socket) => {
@@ -35,7 +50,29 @@ const server = net.createServer((socket) => {
         return;
 
     console.log('new connection:', peerAddr);
-    const outStream = fs.createWriteStream(`./log_${peerAddr}.log`, { flags: 'a' });
+
+    const connCtx = new Map();
+
+    try {
+        fs.mkdirSync(`${peerAddr}.log`);
+    } catch (error) {
+        //nothing todo
+    }
+
+    connCtx.set('path', `${peerAddr}.log/${timeStampForPath()}.log`);
+    connCtx.set('outStream', fs.createWriteStream(connCtx.get('path'), { flags: 'a' }));
+
+    // create standalone log file for every day
+    connCtx.set('timer', setInterval(() => {
+        const oname = nodePath.basename(connCtx.get('path'));
+        const nname = `${timeStampForPath()}.log`;
+        if (oname != nname) {
+            connCtx.set('path', `${peerAddr}.log/${nname}`);
+            const oldStream = connCtx.get('outStream');
+            connCtx.set('outStream', fs.createWriteStream(connCtx.get('path'), { flags: 'a' }));
+            oldStream.close();
+        }
+    }, 1000));
 
     let chunk = '';
     socket.on('data', (data) => {
@@ -47,7 +84,7 @@ const server = net.createServer((socket) => {
                     chunk = chunk.substring(0, chunk.length - 1);
                     chunk = chunk.replace(/^data:/, `[${timeStamp()}]`);
                     if (chunk.trimEnd() != '')
-                        outStream.write(chunk);
+                        connCtx.get('outStream').write(chunk);
                     chunk = '';
                 }
             }
@@ -56,8 +93,10 @@ const server = net.createServer((socket) => {
     socket.on('close', () => {
         chunk = chunk.replace(/^data:/, `[${timeStamp()}]`);
         if (chunk.trimEnd() != '')
-            outStream.write(chunk + '\n');
+            connCtx.get('outStream').write(chunk + '\n');
         chunk = '';
+        clearInterval(connCtx.get('timer'));
+        connCtx.get('outStream').close();
     });
 });
 
