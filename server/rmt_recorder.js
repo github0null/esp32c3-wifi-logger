@@ -9,6 +9,8 @@ let SRV_PORT = 60000;
 if (process.env['MY_RMT_SRV_PORT'] && /^\d+$/.test(process.env['MY_RMT_SRV_PORT']))
     SRV_PORT = parseInt(process.env['MY_RMT_SRV_PORT'])
 
+const logger = fs.createWriteStream('./server.log', { flags: 'a' });
+
 // recorder ----------------------------------------
 
 function timeStamp() {
@@ -45,7 +47,7 @@ const server = net.createServer((socket) => {
     if (peerAddr == undefined)
         return;
 
-    console.log('new connection:', peerAddr);
+    logger.write(`new connection: ${peerAddr}` + os.EOL);
 
     const connCtx = new Map();
 
@@ -97,10 +99,10 @@ const server = net.createServer((socket) => {
 });
 
 server.on('error', (err) => {
-    console.log('server error', err);
+    logger.write(`server error: ${err.message + err.stack}` + os.EOL);
 });
 
 // Grab an arbitrary unused port.
 server.listen(SRV_PORT, '0.0.0.0', () => {
-    console.log('opened server on', server.address());
+    logger.write(`opened server on ${server.address()} at ${timeStamp}` + os.EOL);
 });
