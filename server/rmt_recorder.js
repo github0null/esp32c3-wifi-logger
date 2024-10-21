@@ -87,7 +87,10 @@ const server = net.createServer((socket) => {
         for (const c of str) {
             chunk += c;
             if (c == '\n') {
-                if (chunk.endsWith('\n\n')) {
+                if (chunk.startsWith(':')) { // 以冒号开头的行为注释行，会被忽略
+                    chunk = '';
+                }
+                else if (chunk.endsWith('\n\n')) {
                     chunk = chunk.substring(0, chunk.length - 1);
                     chunk = chunk.replace(/^data:/, `[${timeStamp()}]`);
                     if (chunk.trimEnd() != '')

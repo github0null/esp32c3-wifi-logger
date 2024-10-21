@@ -446,17 +446,51 @@ async def rmt_recorder_process():
             print('reconnect after 10sec...')
             await asyncio.sleep(10)
 
-async def uart_handler():
+async def send_to_web_terminal(tx_buffer):
     global event_stream_conns
+    delList = []
+    for k in event_stream_conns:
+        try:
+            conn = event_stream_conns[k]
+            conn['writer'].write(tx_buffer)
+            await conn['writer'].drain()
+        except Exception as e:
+            print('fail to write into event-stream:', e)
+            conn['writer'].close()
+            delList.append(k)
+    for k in delList:
+        print('delete event-stream:', k)
+        del event_stream_conns[k]
+
+async def send_to_remote_recorder(tx_buffer):
+    global rmt_recorder
+    if rmt_recorder['writer']:
+        try:
+            rmt_recorder['writer'].write(tx_buffer)
+            await rmt_recorder['writer'].drain()
+        except Exception as e:
+            print('fail to write into remote recorder:', e)
+            rmt_recorder['writer'] = None
+            rmt_recorder['evt.abort'].set()
+
+async def uart_handler():
     log_line = bytearray(f'data: [{CFG_DEVICE_TAG}] '.encode())
+    last_active_time = time.time()
     while True:
         if uart1.any() == 0:
-            await asyncio.sleep_ms(10)
+            await asyncio.sleep_ms(50)
+            if time.time() > last_active_time + 40:
+                last_active_time = time.time()
+                print('send keepalive.')
+                _buf = ': keepalive\n\n'.encode()
+                await send_to_remote_recorder(_buf)
+                await send_to_web_terminal(_buf)
             continue
         rx = uart1.read()
         if not rx:
             continue
         # process data
+        last_active_time = time.time()
         for b in rx:
             if b == 0x0D: # CR
                 continue
@@ -465,29 +499,9 @@ async def uart_handler():
                 log_line.append(0x0A)
                 tx_buffer = predecode(log_line)
                 log_line = bytearray(f'data: [{CFG_DEVICE_TAG}] '.encode())
-                # send log to web-terminal
-                delList = []
-                for k in event_stream_conns:
-                    try:
-                        conn = event_stream_conns[k]
-                        conn['writer'].write(tx_buffer)
-                        await conn['writer'].drain()
-                    except Exception as e:
-                        print('fail to write into event-stream:', e)
-                        conn['writer'].close()
-                        delList.append(k)
-                for k in delList:
-                    print('delete event-stream:', k)
-                    del event_stream_conns[k]
-                # send log to remote recorder
-                if rmt_recorder['writer']:
-                    try:
-                        rmt_recorder['writer'].write(tx_buffer)
-                        await rmt_recorder['writer'].drain()
-                    except Exception as e:
-                        print('fail to write into remote recorder:', e)
-                        rmt_recorder['writer'] = None
-                        rmt_recorder['evt.abort'].set()
+                # send log
+                await send_to_web_terminal(tx_buffer)
+                await send_to_remote_recorder(tx_buffer)
             else:
                 log_line.append(b)
 
