@@ -104,5 +104,5 @@ server.on('error', (err) => {
 
 // Grab an arbitrary unused port.
 server.listen(SRV_PORT, '0.0.0.0', () => {
-    logger.write(`opened server on ${server.address()} at ${timeStamp}` + os.EOL);
+    logger.write(`opened server on ${server.address()} at ${timeStamp()}` + os.EOL);
 });
