@@ -56,7 +56,7 @@ const server = net.createServer((socket) => {
     if (peerAddr == undefined)
         return;
 
-    logger.log('new connection:', peerAddr);
+    logger.log('new connection:', peerAddr, 'at', timeStamp());
 
     const connCtx = new Map();
 
@@ -107,6 +107,7 @@ const server = net.createServer((socket) => {
         chunk = '';
         clearInterval(connCtx.get('timer'));
         connCtx.get('outStream').close();
+        logger.log(`connection ${peerAddr} closed.`);
     });
 });
 
