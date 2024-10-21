@@ -2,6 +2,7 @@ const net = require('net');
 const os  = require('os');
 const fs  = require('fs');
 const nodePath = require('path');
+const util = require('util');
 
 // global -----------------------------------------
 
@@ -10,6 +11,14 @@ if (process.env['MY_RMT_SRV_PORT'] && /^\d+$/.test(process.env['MY_RMT_SRV_PORT'
     SRV_PORT = parseInt(process.env['MY_RMT_SRV_PORT'])
 
 const logger = fs.createWriteStream('./server.log', { flags: 'a' });
+logger.log = (...args) => {
+    const formattedArgs = args.map(arg => {
+        if (typeof(arg) == 'string') return arg;
+        return util.inspect(arg, { showHidden: false, depth: null, colors: false });
+    });
+    const message = formattedArgs.join(' ');
+    logger.write(message + os.EOL);
+};
 
 // recorder ----------------------------------------
 
@@ -47,7 +56,7 @@ const server = net.createServer((socket) => {
     if (peerAddr == undefined)
         return;
 
-    logger.write(`new connection: ${peerAddr}` + os.EOL);
+    logger.log('new connection:', peerAddr);
 
     const connCtx = new Map();
 
@@ -99,10 +108,10 @@ const server = net.createServer((socket) => {
 });
 
 server.on('error', (err) => {
-    logger.write(`server error: ${err.message + err.stack}` + os.EOL);
+    logger.log('server error:', err);
 });
 
 // Grab an arbitrary unused port.
 server.listen(SRV_PORT, '0.0.0.0', () => {
-    logger.write(`opened server on ${server.address()} at ${timeStamp()}` + os.EOL);
+    logger.log('opened server on:', server.address(), 'at', timeStamp());
 });
