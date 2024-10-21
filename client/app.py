@@ -341,18 +341,31 @@ async def process_request(req, writer, conn_id):
         print(rsp)
         writer.write(rsp.make())
         await writer.drain()
-    elif HTTP_PATH == '/settings' and HTTP_METHOD == 'POST':
+    elif HTTP_METHOD == 'POST':
         ok = False
         errMsg = None
         if HTTP_BODY:
-            try:
-                setting_val = HTTP_BODY.decode('utf8')
-                print('write settings:')
-                print(setting_val)
-                save_user_settings(setting_val)
-                ok = True
-            except Exception as e:
-                errMsg = str(e)
+            if HTTP_PATH == '/settings':
+                try:
+                    setting_val = HTTP_BODY.decode('utf8')
+                    print('write settings:')
+                    print(setting_val)
+                    save_user_settings(setting_val)
+                    ok = True
+                except Exception as e:
+                    errMsg = str(e)
+            elif HTTP_PATH == '/cmd':
+                value = HTTP_BODY.decode('utf8')
+                if value == 'reboot':
+                    async def delay_reboot():
+                        await asyncio.sleep(3)
+                        machine.reset()
+                    asyncio.create_task(delay_reboot())
+                    ok = True
+                else:
+                    errMsg = 'unknown cmd: ' + value
+            else:
+                errMsg = 'Invalid path: ' + HTTP_PATH
         else:
             errMsg = 'Body Cannot be empty !'
         rsp = HttpRsp(200 if ok else 400) \
