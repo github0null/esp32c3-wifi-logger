@@ -34,8 +34,7 @@ function timeStamp() {
         region: date.toTimeString().split(' ')[1]
     };
     return `${time.year}/${time.month.toString().padStart(2, '0')}/${time.date.toString().padStart(2, '0')}`
-        + ` ${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}:${time.second.toString().padStart(2, '0')}`
-        + ` ${time.region}`;
+        + ` ${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}:${time.second.toString().padStart(2, '0')}`;
 }
 
 function dateTimeStampForFileName() {
