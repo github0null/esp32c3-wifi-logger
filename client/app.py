@@ -289,7 +289,7 @@ def init():
     print('done.')
 
     print('init uart ...')
-    uart1 = machine.UART(1, baudrate=CFG_UART_BAUD, tx=CFG_UART_PIN_TX, rx=CFG_UART_PIN_RX)
+    uart1 = machine.UART(1, baudrate=CFG_UART_BAUD, tx=CFG_UART_PIN_TX, rx=CFG_UART_PIN_RX, rxbuf=1024)
     print('done.')
 
 async def process_request(req, writer, conn_id):
@@ -443,8 +443,8 @@ async def rmt_recorder_process():
         except Exception as e:
             print('remote recorder abort:', e)
         finally:
-            print('reconnect after 10sec...')
-            await asyncio.sleep(10)
+            print('reconnect after 5sec...')
+            await asyncio.sleep(5)
 
 async def send_to_web_terminal(tx_buffer):
     global event_stream_conns
@@ -478,7 +478,7 @@ async def uart_handler():
     last_active_time = time.time()
     while True:
         if uart1.any() == 0:
-            await asyncio.sleep_ms(50)
+            await asyncio.sleep_ms(10)
             if time.time() > last_active_time + 40:
                 last_active_time = time.time()
                 print('send keepalive.')
