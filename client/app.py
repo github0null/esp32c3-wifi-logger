@@ -431,7 +431,7 @@ async def rmt_recorder_process():
                 await writer.drain()
             except:
                 print(f'invalid remote recorder {_host}:{_port}, retry after 5min')
-                await asyncio.sleep(5 * 60)
+                await asyncio.sleep(30)
                 continue
             # start
             rmt_recorder['evt.abort'].clear()
