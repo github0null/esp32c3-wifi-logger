@@ -289,7 +289,7 @@ def init():
     print('done.')
 
     print('init uart ...')
-    uart1 = machine.UART(1, baudrate=CFG_UART_BAUD, tx=CFG_UART_PIN_TX, rx=CFG_UART_PIN_RX, rxbuf=1024)
+    uart1 = machine.UART(1, baudrate=CFG_UART_BAUD, tx=CFG_UART_PIN_TX, rx=CFG_UART_PIN_RX, rxbuf=2048)
     print('done.')
 
 async def process_request(req, writer, conn_id):
@@ -516,7 +516,7 @@ async def main():
     if CFG_RMT_SERVER_EN:
         asyncio.create_task(rmt_recorder_process())
     print('server startup ...')
-    server = await asyncio.start_server(http_handler, local_ip, 80, backlog=2)
+    server = await asyncio.start_server(http_handler, local_ip, 80, backlog=3)
     async with server:
         await server.wait_closed()
     print('exit.')
