@@ -64,19 +64,18 @@ const server = net.createServer((socket) => {
     const connCtx = new Map();
 
     try {
-        fs.mkdirSync(`${peerAddr}.log`);
+        fs.mkdirSync(`${peerAddr}`);
+        connCtx.set('path', `${peerAddr}/${dateTimeStampForFileName()}.log`);
     } catch (error) {
         //nothing todo
     }
-
-    connCtx.set('path', `${peerAddr}.log/${dateTimeStampForFileName()}.log`);
 
     // create standalone log file for every day
     connCtx.set('timer', setInterval(() => {
         const oname = nodePath.basename(connCtx.get('path'));
         const nname = `${dateTimeStampForFileName()}.log`;
         if (oname != nname) {
-            connCtx.set('path', `${peerAddr}.log/${nname}`);
+            connCtx.set('path', `${peerAddr}/${nname}`);
             const oldStream = connCtx.get('outStream');
             if (oldStream) {
                 connCtx.set('outStream', fs.createWriteStream(connCtx.get('path'), { flags: 'a' }));
