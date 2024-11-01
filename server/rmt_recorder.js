@@ -98,10 +98,10 @@ const server = net.createServer((socket) => {
                     chunk = chunk.substring(0, chunk.length - 1);
                     chunk = chunk.replace(/^data:/, `[${timeStamp(true)}]`);
                     if (chunk.trimEnd() != '') {
-                        const stream = connCtx.get('outStream');
+                        let stream = connCtx.get('outStream');
                         if (stream == undefined) {
-                            connCtx.set('outStream', 
-                                fs.createWriteStream(connCtx.get('path'), { flags: 'a' }));
+                            stream = fs.createWriteStream(connCtx.get('path'), { flags: 'a' });
+                            connCtx.set('outStream', stream);
                         }
                         stream.write(chunk);
                     }
