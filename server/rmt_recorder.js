@@ -108,6 +108,10 @@ const server = net.createServer((socket) => {
         connCtx.get('outStream').close();
         logger.log(`connection ${peerAddr} closed.`);
     });
+    socket.on('error', (err) => {
+        logger.log(`socket '${peerAddr}' error:`);
+        logger.log(err);
+    });
 });
 
 server.on('error', (err) => {
