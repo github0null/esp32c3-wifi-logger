@@ -65,10 +65,11 @@ const server = net.createServer((socket) => {
 
     try {
         fs.mkdirSync(`${peerAddr}`);
-        connCtx.set('path', `${peerAddr}/${dateTimeStampForFileName()}.log`);
     } catch (error) {
         //nothing todo
     }
+
+    connCtx.set('path', `${peerAddr}/${dateTimeStampForFileName()}.log`);
 
     // create standalone log file for every day
     connCtx.set('timer', setInterval(() => {
