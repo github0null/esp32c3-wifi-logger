@@ -1,0 +1,7 @@
+在本目录下新建一个 logs 文件夹，将所有日志放入其中（可以使用软链接将 rmt_recorder.js 生成的 logs 目录链接过来）
+
+运行 `npm install` 安装
+
+运行 `node ./web.js` 启动服务，端口 3000
+
+访问 http://localhost:3000 查看日志文件

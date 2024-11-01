@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Log Browser</title>
+<style>
+html {
+    color: white;
+    background: #212121;
+    /* ---- */
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    font-family: monospace;
+    display: flex;
+}
+body {
+    width: 100%;
+    margin: 0;
+    font-family: monospace;
+    display: flex;
+}
+#sidebar {
+    width: 200px;
+    border-right: 1px solid #ccc;
+}
+#main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+#logs {
+    /* ---- */
+    font-family: consolas;
+    font-size: 14px;
+    /* ---- */
+    overflow-y: scroll;
+    white-space: pre-wrap;
+    margin: 10px;
+}
+.file { 
+    cursor: pointer;
+    padding: 5px; 
+    margin-left: 8px;
+}
+.file:hover { 
+    background-color: #484646; 
+}
+.directory { 
+    cursor: pointer;
+    padding: 5px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+.directory:hover { 
+    background-color: #463939; 
+}
+.toolbox {
+    display: flex; /* 使用 Flexbox 布局 */
+    align-items: center; /* 垂直居中对齐 */
+    margin: 8px;
+}
+.checkbox-container {
+    display: flex; /* 使用 Flexbox 布局 */
+    align-items: center; /* 垂直居中对齐 */
+}
+.checkbox-container label {
+    margin-right: 12px; /* 为复选框右侧添加间距 */
+}
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <div class="directory" onclick="loadDirectory('')">/logs</div>
+</div>
+<div id="main">
+    <div class="toolbox">
+        <div class="checkbox-container">
+            <input type="checkbox" id="checkbox-autoScroll" checked/>
+            <label for="checkbox-autoScroll">Auto Scroll</label>
+        </div>
+    </div>
+    <div id="logs"></div>
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const logsDiv = document.getElementById('logs');
+  const socket = new WebSocket('ws://' + window.location.host + '/ws/');
+
+  var autoScrollBox = document.getElementById('checkbox-autoScroll');
+
+  function loadDirectory(dir) {
+    fetch(`/browse/${encodeURIComponent(dir)}`)
+      .then(res => res.json())
+      .then(files => {
+        const content = files.map(file => {
+          let abspath = file.name
+          if (dir != '') abspath = dir + '/' + file.name
+          if (file.isDirectory) {
+            return `<div class="directory" onclick="loadDirectory('${abspath}')">${file.name}</div>`;
+          } else {
+            return `<div class="file" onclick="loadFile('${abspath}')">${file.name}</div>`;
+          }
+        }).join('');
+        sidebar.innerHTML = `<div class="directory" onclick="loadDirectory('')">/${dir}</div>${content}`;
+      })
+      .catch(err => console.error(err));
+  }
+
+  function loadFile(filePath) {
+    socket.close();
+    socket.onclose = null;
+    //-------------------------------------
+    const nsocket = new WebSocket(`ws://${window.location.host}/ws/${encodeURIComponent(filePath)}`);
+    logsDiv.textContent = ''
+    nsocket.onmessage = function(event) {
+      logsDiv.textContent += event.data;
+      if (autoScrollBox.checked) {
+        logsDiv.scrollTop = logsDiv.scrollHeight; // 自动滚动到底部
+      }
+    };
+    nsocket.onopen = function() {
+      console.log('Connected to the server');
+    };
+    nsocket.onclose = function() {
+      console.log('Disconnected from the server');
+    };
+  }
+
+  loadDirectory('');
+
+  // 监听键盘事件，实现 Ctrl+A 仅选中 #logs 内容
+  document.addEventListener('keydown', function(event) {
+    if (event.ctrlKey && event.key === 'a') {
+      event.preventDefault(); // 阻止默认行为
+      selectLogsContent();
+    }
+  });
+  function selectLogsContent() {
+    const range = document.createRange();
+    const selection = window.getSelection();
+    range.selectNodeContents(logsDiv);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+</script>
+</body>
+</html>

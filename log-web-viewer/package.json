@@ -1,0 +1,15 @@
+{
+  "name": "rmt-web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "web.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "CL",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "express-ws": "^5.0.2"
+  }
+}
