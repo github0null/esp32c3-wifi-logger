@@ -53,6 +53,13 @@ function dateTimeStampForFileName() {
 
 // server ----------------------------------------
 
+const LOG_ROOT = './logs';
+try {
+    fs.mkdirSync(LOG_ROOT);
+} catch (error) {
+    //nothing todo
+}
+
 const server = net.createServer((socket) => {
 
     const peerAddr = socket.remoteAddress;
@@ -63,20 +70,21 @@ const server = net.createServer((socket) => {
 
     const connCtx = new Map();
 
+    const logDir = `${LOG_ROOT}/${peerAddr}`;
     try {
-        fs.mkdirSync(`${peerAddr}`);
+        fs.mkdirSync(logDir);
     } catch (error) {
         //nothing todo
     }
 
-    connCtx.set('path', `${peerAddr}/${dateTimeStampForFileName()}.log`);
+    connCtx.set('path', `${logDir}/${dateTimeStampForFileName()}.log`);
 
     // create standalone log file for every day
     connCtx.set('timer', setInterval(() => {
         const oname = nodePath.basename(connCtx.get('path'));
         const nname = `${dateTimeStampForFileName()}.log`;
         if (oname != nname) {
-            connCtx.set('path', `${peerAddr}/${nname}`);
+            connCtx.set('path', `${logDir}/${nname}`);
             const oldStream = connCtx.get('outStream');
             if (oldStream) {
                 connCtx.set('outStream', fs.createWriteStream(connCtx.get('path'), { flags: 'a' }));
