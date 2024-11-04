@@ -67,6 +67,14 @@ body {
 .checkbox-container label {
     margin-right: 12px; /* 为复选框右侧添加间距 */
 }
+.text-label {
+    margin-left: 4px;
+    margin-right: 4px;
+}
+.toolbox .text-label {
+    margin-left: 12px;
+    margin-right: 12px;
+}
 </style>
 </head>
 <body>
@@ -75,10 +83,12 @@ body {
 </div>
 <div id="main">
     <div class="toolbox">
-        <div class="checkbox-container">
+      <div class="text-label" id="filename">adasd/asd/asdasd</div>
+      <button id="refreshButton">Refresh</button>
+        <!-- <div class="checkbox-container">
             <input type="checkbox" id="checkbox-autoScroll" checked/>
             <label for="checkbox-autoScroll">Auto Scroll</label>
-        </div>
+        </div> -->
     </div>
     <div id="logs"></div>
 </div>
@@ -89,7 +99,17 @@ body {
   const wsProto = window.location.protocol.includes('https') ? 'wss' : 'ws';
   const socket = new WebSocket(wsProto + '://' + window.location.host + '/ws/');
 
-  var autoScrollBox = document.getElementById('checkbox-autoScroll');
+  //var autoScrollBox = document.getElementById('checkbox-autoScroll');
+  var fileNameTxtbox = document.getElementById('filename');
+  var refreshButton = document.getElementById('refreshButton');
+
+  refreshButton.addEventListener('click', function() {
+    if (fileNameTxtbox.textContent.trim()) {
+      let p = fileNameTxtbox.textContent;
+      console.log(`refresh file: ${p}`)
+      loadFile(p)
+    }
+  });
 
   function loadDirectory(dir) {
     fetch(`/browse/${encodeURIComponent(dir)}`)
@@ -113,13 +133,15 @@ body {
     socket.close();
     socket.onclose = null;
     //-------------------------------------
+
+    fileNameTxtbox.textContent = filePath
     const nsocket = new WebSocket(`${wsProto}://${window.location.host}/ws/${encodeURIComponent(filePath)}`);
     logsDiv.textContent = ''
     nsocket.onmessage = function(event) {
       logsDiv.textContent += event.data;
-      if (autoScrollBox.checked) {
+      //if (autoScrollBox.checked) {
         logsDiv.scrollTop = logsDiv.scrollHeight; // 自动滚动到底部
-      }
+      //}
     };
     nsocket.onopen = function() {
       console.log('Connected to the server');
